@@ -3,6 +3,8 @@ name = "git-whisper"
 version = "0.1.0"
 description = "Local commit message generator using ollama"
 authors = ["haradama <harada@sfc.wide.ad.jp>"]
+homepage = "https://github.com/haradama"
+repository = "https://github.com/haradama/git-whisper"
 license = "MIT"
 readme = "README.md"
 
