@@ -1,21 +1,26 @@
 """Provides commit message generation using ollama."""
 
-from typing import List
+from typing import List, Callable, Any, Iterator
 
-from ollama import chat, ChatResponse
+from ollama import chat
 from pydantic import BaseModel
 
 class CommitMessage(BaseModel):
     title: str
     changes: List[str]
 
-
-def generate_commit_message_stream(diff_text: str, model_name: str) -> str:
+def generate_commit_message_stream(
+    diff_text: str,
+    model_name: str,
+    chat_func: Callable[..., Iterator] = chat
+) -> str:
     """
     Generate a commit message using the specified model in ollama (streaming).
+    This function supports dependency injection of chat_func for testing.
 
     :param diff_text: The staged diff text from the Git repository.
     :param model_name: The name of the model to be used in ollama.
+    :param chat_func: (Optional) A function compatible with ollama.chat for mock testing.
     :return: A generated commit message as a string.
     """
 
@@ -32,37 +37,32 @@ DIFF:
 {diff_text}
 """
 
-    messages = [
-        {
-            "role": "user",
-            "content": prompt_content
-        }
-    ]
-
-    # Enable streaming: This returns a generator that yields chunks of response.
-    stream = chat(
+    # Use the injected chat_func instead of directly calling ollama.chat
+    stream = chat_func(
         model=model_name,
-        messages=messages,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt_content
+            }
+        ],
         format=CommitMessage.model_json_schema(),
         stream=True
     )
 
     response = ""
-
     for chunk in stream:
-        # Get the text content from the chunk
         text_chunk = chunk["message"]["content"]
-        # Print the text chunk immediately so the user sees generation in real time
+        # Print streaming to stdout (we still do this, but it's fine for test coverage)
         print(text_chunk, end="", flush=True)
         response += text_chunk
 
-    # Print a newline after streaming completes
-    print()
+    print()  # final newline
+
     generated_message = CommitMessage.model_validate_json(response)
     final_message = f"""
-    {generated_message.title}
-    
-    {"".join(f"- {change}\n" for change in generated_message.changes)}
-    """
+{generated_message.title}
 
+{"".join(f"- {change}\n" for change in generated_message.changes)}
+"""
     return final_message
