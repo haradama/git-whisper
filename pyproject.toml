@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "git-whisper"
+version = "0.1.0"
+description = "Local commit message generator using ollama"
+authors = ["haradama <harada@sfc.wide.ad.jp>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+gitpython = "^3.1.44"
+ollama = "^0.4.7"
+
+[tool.poetry.scripts]
+git-whisper = "git_whisper.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
