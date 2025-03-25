@@ -1,6 +1,14 @@
 """Provides commit message generation using ollama."""
 
+from typing import List
+
 from ollama import chat, ChatResponse
+from pydantic import BaseModel
+
+class CommitMessage(BaseModel):
+    title: str
+    changes: List[str]
+
 
 def generate_commit_message_stream(diff_text: str, model_name: str) -> str:
     """
@@ -32,18 +40,29 @@ DIFF:
     ]
 
     # Enable streaming: This returns a generator that yields chunks of response.
-    stream = chat(model=model_name, messages=messages, stream=True)
+    stream = chat(
+        model=model_name,
+        messages=messages,
+        format=CommitMessage.model_json_schema(),
+        stream=True
+    )
 
-    final_message = ""
+    response = ""
 
     for chunk in stream:
         # Get the text content from the chunk
         text_chunk = chunk["message"]["content"]
         # Print the text chunk immediately so the user sees generation in real time
         print(text_chunk, end="", flush=True)
-        final_message += text_chunk
+        response += text_chunk
 
     # Print a newline after streaming completes
     print()
+    generated_message = CommitMessage.model_validate_json(response)
+    final_message = f"""
+    {generated_message.title}
+    
+    {"".join(f"- {change}\n" for change in generated_message.changes)}
+    """
 
-    return final_message.strip()
+    return final_message

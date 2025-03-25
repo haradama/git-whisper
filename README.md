@@ -64,4 +64,3 @@ If you do not specify a model, `"llama3"` is used by default.
 ## License
 
 This project is provided under the MIT License. See [LICENSE](./LICENSE) for details.
-
