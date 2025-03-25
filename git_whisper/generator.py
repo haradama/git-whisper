@@ -12,8 +12,13 @@ def generate_commit_message_stream(diff_text: str, model_name: str) -> str:
     """
 
     prompt_content = f"""You are an AI that generates concise, clear commit messages.
+Please generate a commit message in the following format and follow these rules:
+1. Do not include any additional text beyond the commit message itself.
+2. The commit message must consist of exactly two parts:
+  - A short, descriptive title on the first line (approximately 50 characters).
+  - A bullet-point list of changes made, each on its own line.
 
-Given the following Git diff, please provide a short commit message summary in English.
+Given the following Git diff, please provide a short commit message in English.
 
 DIFF:
 {diff_text}
