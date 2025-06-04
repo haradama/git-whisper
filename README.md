@@ -26,13 +26,13 @@ pip install git+https://github.com/haradama/git-whisper.git
 
 ## Usage
 
-1. Make changes to your files and stage them:
+Make changes to your files and stage them:
 
 ```bash
 git add <files>
 ```
 
-1. Run:
+Run:
 
 ```bash
 git whisper
@@ -44,7 +44,7 @@ git whisper
   - Press `Enter` or type `Y` to accept. The message is automatically committed with `git commit -m "<generated message>"`.
   - Type `n` to cancel. No commit will be made.
 
-1. **Optional**: One-liner usage
+**Optional**: One-liner usage
 
 ```bash
 git commit -m "$(git whisper)"
