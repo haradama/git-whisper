@@ -33,6 +33,9 @@ def main():
         diff_text = "[Initial commit detected; no diff available]"
     else:
         diff_text = repo.git.execute(["git", "diff", "--staged"])
+        if not diff_text:
+            print("Error: No staged diff found; cannot generate a commit message")
+            sys.exit(1)
 
     print("Generating commit message (streaming). Please wait...\n")
     commit_message = generate_commit_message_stream(diff_text, model_name)
@@ -45,6 +48,6 @@ def main():
             print("\nAccepted commit message:\n")
             sys.exit(0)
         elif choice == "n":
-            sys.exit(1)
+            sys.exit(0)
         else:
             print("Invalid choice. Please enter 'Y' or 'n'.\n")
