@@ -8,48 +8,49 @@ This tool streams LLM-generated commit messages based on your staged diff and le
 
 ## Prerequisites
 
-- **Ollama server must be running**  
-  Make sure you have [Ollama](https://github.com/jmorganca/ollama) installed and started locally:
+**Ollama server must be running.** Make sure you have [Ollama](https://github.com/jmorganca/ollama) installed and started locally:
 
-  ```bash
-  ollama serve
-  ```
+```bash
+ollama serve
+```
 
-If Ollama is not running, `git whisper` will be unable to generate a commit message.
+If Ollama is not running, `git-whisper` will be unable to generate a commit message.
 
 ## Installation
 
+You can install `git-whisper` by using pip:
+
 ```bash
-pip install git-whisper
+pip install git+https://github.com/haradama/git-whisper.git
 ```
 
 ## Usage
 
 1. Make changes to your files and stage them:
 
-   ```bash
-   git add <files>
-   ```
+```bash
+git add <files>
+```
 
-2. Run:
+1. Run:
 
-   ```bash
-   git whisper
-   ```
+```bash
+git whisper
+```
 
-   - The tool reads your staged diff and uses the locally running Ollama server to generate a commit message.
-   - The generated message is streamed in real time to your terminal.
-   - After the generation finishes, you'll see `Accept this message? (Y/n)`.
-     - Press `Enter` or type `Y` to accept. The message is automatically committed with `git commit -m "<generated message>"`.
-     - Type `n` to cancel. No commit will be made.
+- The tool reads your staged diff and uses the locally running Ollama server to generate a commit message.
+- The generated message is streamed in real time to your terminal.
+- After the generation finishes, you'll see `Accept this message? (Y/n)`.
+  - Press `Enter` or type `Y` to accept. The message is automatically committed with `git commit -m "<generated message>"`.
+  - Type `n` to cancel. No commit will be made.
 
-3. **Optional**: One-liner usage
+1. **Optional**: One-liner usage
 
-   ```bash
-   git commit -m "$(git whisper)"
-   ```
+```bash
+git commit -m "$(git whisper)"
+```
 
-   However, keep in mind that the default setup is interactive and will prompt you before finalizing the commit.
+However, keep in mind that the default setup is interactive and will prompt you before finalizing the commit.
 
 ## Configuration
 
