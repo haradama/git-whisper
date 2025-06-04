@@ -1,6 +1,6 @@
 """Provides commit message generation using ollama."""
 
-from typing import List, Callable, Any, Iterator
+from typing import List, Callable, Iterator
 
 from ollama import chat
 from pydantic import BaseModel
@@ -24,7 +24,8 @@ def generate_commit_message_stream(
     :return: A generated commit message as a string.
     """
 
-    prompt_content = f"""You are an AI that generates concise, clear commit messages.
+    prompt_content = f"""
+You are a professional software engineer that generates concise, clear commit messages.
 Please generate a commit message in the following format and follow these rules:
 1. Do not include any additional text beyond the commit message itself.
 2. The commit message must consist of exactly two parts:
@@ -63,6 +64,6 @@ DIFF:
     final_message = f"""
 {generated_message.title}
 
-{"".join(f"- {change}\n" for change in generated_message.changes)}
+{"".join(f"- {change.lstrip("- ")}\n" for change in generated_message.changes)}
 """
     return final_message
