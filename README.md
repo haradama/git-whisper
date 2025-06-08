@@ -1,5 +1,7 @@
 # git-whisper
 
+![Demo](demo.gif)
+
 **git-whisper** is a commit-message generator powered by an Ollama-served
 LLM.  
 It streams a concise commit message for your staged diff, shows it in real time,
