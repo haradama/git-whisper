@@ -6,7 +6,6 @@ use std::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /* ───── Git リポジトリ確認 ───── */
     let repo = match git2::Repository::discover(".") {
         Ok(r) => r,
         Err(_) => {
@@ -16,9 +15,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let is_initial = repo.is_empty().unwrap_or(false) || repo.head().is_err();
 
-    /* ───── git config から model / prompt を取得 ───── */
     let mut model  = "llama3".to_string();
-    let mut prompt = None;                       // Option<String>
+    let mut prompt = None;
     if let Ok(cfg) = repo.config() {
         if let Ok(m) = cfg.get_string("git-whisper.model") {
             model = m;
@@ -28,7 +26,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    /* ───── ステージ済み diff 取得 ───── */
     let diff_text = if is_initial {
         "[Initial commit detected; no diff available]".to_string()
     } else {
@@ -43,7 +40,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Generating commit message (streaming). Please wait…\n");
 
-    /* ───── 生成 ───── */
     let commit_msg =
         generate_commit_message_stream(&diff_text, &model, prompt.as_deref()).await?;
 

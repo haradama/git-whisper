@@ -1,6 +1,3 @@
-//! ストリーミングで JSON を受け取りつつ逐次表示し、
-//! 最後にログをクリアして整形済みメッセージを出力する。
-
 use futures_util::StreamExt;
 use reqwest::Client;
 use serde::Deserialize;
@@ -14,17 +11,11 @@ pub struct CommitMessage {
     pub changes: Vec<String>,
 }
 
-/// diff・モデル名・任意プロンプトを受け取りコミットメッセージを生成
-///
-/// * `prompt_tpl`:
-///   - `None`         → デフォルト英語プロンプトを使用
-///   - `Some(str)`    → 文字列内の `{diff}` を Git diff で置換して使用
 pub async fn generate_commit_message_stream(
     diff_text: &str,
     model_name: &str,
     prompt_tpl: Option<&str>,
 ) -> Result<String, Box<dyn Error>> {
-    /* ───── プロンプト合成 ───── */
     const DEFAULT_PROMPT: &str = r#"
 You are a professional software engineer that generates concise, clear commit messages.
 Please generate a commit message in the following format and follow these rules:
@@ -47,7 +38,6 @@ DIFF:
         format!("{tpl}\n\nDIFF:\n{diff_text}")
     };
 
-    /* ───── JSON スキーマ (Ollama format) ───── */
     let schema: Value = json!({
         "type": "object",
         "properties": {
@@ -57,7 +47,6 @@ DIFF:
         "required": ["title", "changes"]
     });
 
-    /* ───── リクエスト送信 ───── */
     let body = json!({
         "model": model_name,
         "messages": [{ "role": "user", "content": prompt_content }],
@@ -75,7 +64,6 @@ DIFF:
         return Err(format!("Ollama returned HTTP {}", resp.status()).into());
     }
 
-    /* ───── ストリーム処理 ───── */
     let mut raw_json   = String::new();
     let mut remainder  = String::new();
     let mut line_count = 0usize;
@@ -95,13 +83,10 @@ DIFF:
         handle_line(&remainder, &mut raw_json, &mut line_count)?;
     }
 
-    /* ───── JSON → 構造体 ───── */
     let parsed: CommitMessage = serde_json::from_str(raw_json.trim())?;
 
-    /* ───── ストリームをクリア ───── */
     clear_lines(line_count)?;
 
-    /* ───── 整形メッセージ生成 ───── */
     let mut formatted = parsed.title.trim().to_string();
     formatted.push_str("\n\n");
     for ch in parsed.changes {
@@ -113,10 +98,6 @@ DIFF:
 
     Ok(formatted)
 }
-
-/* ───────────────────────────────────────────── */
-/* 補助関数                                      */
-/* ───────────────────────────────────────────── */
 
 fn handle_line(
     line: &str,
