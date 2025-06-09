@@ -1,12 +1,13 @@
 use futures_util::StreamExt;
 use reqwest::Client;
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::error::Error;
 use std::io::{self, Write};
 
 #[derive(Debug, Deserialize)]
 pub struct CommitMessage {
+    pub commit_type: String,
     pub title: String,
     pub changes: Vec<String>,
 }
@@ -24,8 +25,11 @@ Please generate a commit message in the following format and follow these rules:
    - A short, descriptive title on the first line (≈50 characters).
    - A bullet-point list of changes made, each on its own line.
 
-Given the following Git diff, please provide a short commit message in JSON with keys
-`title` (string) and `changes` (array of strings). Output the keys in that order.
+Given the following Git diff, please provide a short commit message in a JSON object with keys
+`commit_type`, `title`, and `changes`.
+
+`commit_type` **must** be one of the following strings:
+fix, feat, docs, style, refactor, perf, test, build, ci, chore.
 
 DIFF:
 {diff}
@@ -41,10 +45,14 @@ DIFF:
     let schema: Value = json!({
         "type": "object",
         "properties": {
+            "commit_type": {
+                "type": "string",
+                "enum": ["fix","feat","docs","style","refactor","perf","test","build","ci","chore"]
+            },
             "title":   { "type": "string" },
             "changes": { "type": "array", "items": { "type": "string" } }
         },
-        "required": ["title", "changes"]
+        "required": ["commit_type","title","changes"]
     });
 
     let body = json!({
@@ -64,10 +72,10 @@ DIFF:
         return Err(format!("Ollama returned HTTP {}", resp.status()).into());
     }
 
-    let mut raw_json   = String::new();
-    let mut remainder  = String::new();
+    let mut raw_json = String::new();
+    let mut remainder = String::new();
     let mut line_count = 0usize;
-    let mut stream     = resp.bytes_stream();
+    let mut stream = resp.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
         let chunk = chunk?;
@@ -75,7 +83,7 @@ DIFF:
 
         while let Some(idx) = remainder.find('\n') {
             let mut line: String = remainder.drain(..=idx).collect();
-            line.pop();                                  // '\n'
+            line.pop(); // '\n'
             handle_line(&line, &mut raw_json, &mut line_count)?;
         }
     }
@@ -87,7 +95,7 @@ DIFF:
 
     clear_lines(line_count)?;
 
-    let mut formatted = parsed.title.trim().to_string();
+    let mut formatted = format!("{}: {}", parsed.commit_type, parsed.title.trim());
     formatted.push_str("\n\n");
     for ch in parsed.changes {
         formatted.push_str("- ");
