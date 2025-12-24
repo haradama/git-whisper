@@ -16,31 +16,68 @@ pub async fn generate_commit_message_stream(
     diff_text: &str,
     model_name: &str,
     prompt_tpl: Option<&str>,
+    intent_hint: Option<&str>,
 ) -> Result<String, Box<dyn Error>> {
     const DEFAULT_PROMPT: &str = r#"
-You are a professional software engineer that generates concise, clear commit messages.
-Please generate a commit message in the following format and follow these rules:
-1. Do not include any additional text beyond the commit message itself.
-2. The commit message must consist of exactly two parts:
-   - A short, descriptive title on the first line (≈50 characters).
-   - A bullet-point list of changes made, each on its own line.
+You are a professional software engineer that writes high-quality commit messages.
 
-Given the following Git diff, please provide a short commit message in a JSON object with keys
-`commit_type`, `title`, and `changes`.
+Core principle:
+- A good commit message explains intent (WHY) and the goal/outcome, not a line-by-line description of the diff.
 
-`commit_type` **must** be one of the following strings:
+Input:
+- You will receive a Git diff and (optionally) an INTENT_HINT written by the user.
+- If INTENT_HINT is present, treat it as the primary source of truth for "why".
+
+Output requirements:
+1. Output ONLY a JSON object with keys: `commit_type`, `title`, `changes`.
+2. The final commit message will be rendered as:
+   - "{commit_type}: {title}" on the first line
+   - blank line
+   - bullet list from `changes`, each item becomes "- {item}"
+
+Commit message quality rules:
+- Title MUST state the intent/outcome in ~50 chars (not "update X", not "refactor code").
+  Prefer patterns like:
+  - "Make <X> pass <Y>"
+  - "Prevent <bad thing> in <context>"
+  - "Enable <capability> for <reason>"
+- Each bullet in `changes` MUST include intent language (use at least one of: "to", "so that", "because", "in order to").
+  Bad: "Rename function", "Add check", "Update config"
+  Good: "Rename X to clarify intent so that usage is unambiguous"
+- Do NOT mechanically narrate the diff. Mention "what" only when necessary to support the "why".
+- If intent cannot be inferred from the diff and INTENT_HINT is empty, write a cautious, general intent
+  (e.g., maintainability, correctness, performance, developer experience) rather than listing file edits.
+
+Classification:
+`commit_type` must be one of:
 fix, feat, docs, style, refactor, perf, test, build, ci, chore.
+
+INTENT_HINT (optional, may be empty):
+{intent}
 
 DIFF:
 {diff}
 "#;
 
     let tpl = prompt_tpl.unwrap_or(DEFAULT_PROMPT);
-    let prompt_content = if tpl.contains("{diff}") {
+
+    let mut prompt_content = if tpl.contains("{diff}") {
         tpl.replace("{diff}", diff_text)
     } else {
         format!("{tpl}\n\nDIFF:\n{diff_text}")
     };
+
+    if prompt_content.contains("{intent}") {
+        prompt_content = prompt_content.replace("{intent}", intent_hint.unwrap_or(""));
+    } else if let Some(hint) = intent_hint {
+        if !hint.trim().is_empty() {
+            prompt_content.push_str("\n\nINTENT_HINT:\n");
+            prompt_content.push_str(hint.trim());
+            prompt_content.push_str(
+                "\n\nGuidance: reflect this intent in the title and bullets; do not just restate the diff.\n",
+            );
+        }
+    }
 
     let schema: Value = json!({
         "type": "object",

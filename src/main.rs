@@ -9,6 +9,26 @@ use std::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut intent: Option<String> = None;
+    let mut it = env::args().skip(1);
+
+    while let Some(arg) = it.next() {
+        if arg == "--intent" {
+            let v = it.next().unwrap_or_else(|| {
+                eprintln!("Error: --intent requires a value (e.g. --intent \"...\" )");
+                std::process::exit(2);
+            });
+            intent = Some(v);
+        } else if let Some(v) = arg.strip_prefix("--intent=") {
+            intent = Some(v.to_string());
+        } else if arg == "-h" || arg == "--help" {
+            println!(
+                "Usage: git-whisper [--intent \"...\"]\n\n  --intent  Provide a hint describing WHY this change is made."
+            );
+            return Ok(());
+        }
+    }
+
     let repo = match git2::Repository::discover(".") {
         Ok(r) => r,
         Err(_) => {
@@ -44,7 +64,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Generating commit message (streaming). Please wait…\n");
 
     let mut commit_msg =
-        generate_commit_message_stream(&diff_text, &model, prompt.as_deref()).await?;
+        generate_commit_message_stream(&diff_text, &model, prompt.as_deref(), intent.as_deref())
+            .await?;
 
     println!("\n[Commit message preview above]");
 
