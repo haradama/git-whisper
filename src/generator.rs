@@ -83,7 +83,7 @@ DIFF:
 
         while let Some(idx) = remainder.find('\n') {
             let mut line: String = remainder.drain(..=idx).collect();
-            line.pop(); // '\n'
+            line.pop();
             handle_line(&line, &mut raw_json, &mut line_count)?;
         }
     }
