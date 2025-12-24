@@ -69,14 +69,14 @@ DIFF:
 
     if prompt_content.contains("{intent}") {
         prompt_content = prompt_content.replace("{intent}", intent_hint.unwrap_or(""));
-    } else if let Some(hint) = intent_hint {
-        if !hint.trim().is_empty() {
-            prompt_content.push_str("\n\nINTENT_HINT:\n");
-            prompt_content.push_str(hint.trim());
-            prompt_content.push_str(
+    } else if let Some(hint) = intent_hint
+        && !hint.trim().is_empty()
+    {
+        prompt_content.push_str("\n\nINTENT_HINT:\n");
+        prompt_content.push_str(hint.trim());
+        prompt_content.push_str(
                 "\n\nGuidance: reflect this intent in the title and bullets; do not just restate the diff.\n",
             );
-        }
     }
 
     let schema: Value = json!({

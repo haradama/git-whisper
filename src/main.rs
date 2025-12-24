@@ -124,10 +124,9 @@ fn git_commit_with_message(commit_msg: &str) -> io::Result<()> {
 
     let status = cmd.status()?;
     if !status.success() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("git commit failed with status: {status}"),
-        ));
+        return Err(io::Error::other(format!(
+            "git commit failed with status: {status}"
+        )));
     }
     Ok(())
 }
@@ -145,10 +144,9 @@ fn edit_in_editor(initial: &str) -> io::Result<String> {
     let status = Command::new(cmd).args(args).arg(&path).status()?;
     if !status.success() {
         let _ = fs::remove_file(&path);
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Editor exited with status: {status}"),
-        ));
+        return Err(io::Error::other(format!(
+            "Editor exited with status: {status}"
+        )));
     }
 
     let edited = fs::read_to_string(&path)?;
